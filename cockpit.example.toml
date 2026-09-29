@@ -1,0 +1,23 @@
+# workspace-cockpit configuration. Copy this file next to the folder you want to track,
+# name it cockpit.toml, and run `bin/cockpit start` from there. Every key is optional.
+
+# Folder to track, relative to this file (or absolute, or starting with ~).
+root = "."
+
+# Collections: direct subfolders whose children are tracked, each shown with its label.
+collections = [
+  { dir = "projects", label = "project" },
+  # { dir = "research", label = "research" },
+]
+
+archive_dir = "_archive"        # done folders move to <collection>/_archive/<year>/<name>
+header_file = "CLAUDE.md"       # file holding each folder's header (README.md works too)
+stale_after_days = 14           # an active folder whose header is older gets flagged
+due_soon_days = 7               # "due soon" horizon
+
+terminal = "iterm"              # iterm | terminal (Terminal.app) | none (hides terminal buttons)
+editor_app = "Visual Studio Code"   # macOS app name for the editor button, "" to hide it
+agent_command = "claude"        # typed in the terminal tab, e.g. "claude --model opus"
+
+port = 8766
+write_index = false             # true: rewrite <root>/INDEX.md after every change

@@ -1,0 +1,13 @@
+node_modules/
+.next/
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.DS_Store
+next-env.d.ts
+*.tsbuildinfo
+# Your own config lives next to your workspace, not in this repository.
+/cockpit.toml
+/examples/demo-workspace/
+/examples/demo-claude/
