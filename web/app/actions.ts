@@ -8,7 +8,7 @@ import { revalidatePath } from "next/cache";
 import { isInside } from "@/lib/files";
 import { cli, invalidate, listFolders, sessions, settings } from "@/lib/cockpit";
 import { openCommand, resumeCommand, type Command, type Target } from "@/lib/open";
-import type { Folder, Result } from "@/lib/types";
+import type { Folder, Result, Todo } from "@/lib/types";
 
 const run = promisify(execFile);
 const TARGETS: readonly Target[] = ["finder", "editor", "terminal", "agent"];
@@ -22,10 +22,10 @@ async function attempt<T>(work: () => Promise<T>): Promise<Result<T>> {
   }
 }
 
-async function write(args: string[]): Promise<Result<Folder>> {
+async function write<T = Folder>(args: string[]): Promise<Result<T>> {
   return attempt(async () => {
     try {
-      return await cli<Folder>(args);
+      return await cli<T>(args);
     } finally {
       invalidate();
       revalidatePath("/", "layout");
@@ -45,6 +45,15 @@ export async function archiveFolder(p: string) { return write(["archive", p]); }
 export async function unarchiveFolder(p: string) { return write(["unarchive", p]); }
 export async function createFolder(collection: string, name: string, summary: string) {
   return write(["new", collection, name, `--summary=${summary}`]);
+}
+
+export async function addTodo(text: string) { return write<Todo>(["todo", "add", "--", text]); }
+/** The expected text makes the CLI refuse if the inbox file changed since the page was rendered. */
+export async function actOnTodo(action: "done" | "undo" | "delete", n: number, expected: string) {
+  return write<Todo>(["todo", action, String(n), `--expected=${expected}`]);
+}
+export async function promoteTodo(n: number, expected: string, name: string) {
+  return write(["todo", "promote", String(n), name, `--expected=${expected}`]);
 }
 
 /** Only folders listed by the CLI can be opened. */

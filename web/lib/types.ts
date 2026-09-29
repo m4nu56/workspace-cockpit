@@ -6,6 +6,8 @@ export interface Folder {
   status: string; summary: string; next_step: string; waiting_on: string; who: string; due: string; updated: string;
 }
 
+export interface Todo { n: number; done: boolean; added: string; finished: string; text: string }
+
 export interface FileInfo { path: string; size: number; mtime: number }
 export interface FolderPage { folder: Folder; files: FileInfo[]; truncated: boolean; header_text: string | null }
 export interface SearchResult { path: string; name: string; file: string | null; line: number | null; excerpt: string }
@@ -14,7 +16,7 @@ export type Result<T> = { ok: true; value: T } | { ok: false; error: string };
 export interface Settings {
   root: string; home: string; collections: { dir: string; label: string }[]; archive_dir: string; header_file: string;
   stale_after_days: number; due_soon_days: number; terminal: "iterm" | "terminal" | "none";
-  editor_app: string; agent_command: string; port: number;
+  editor_app: string; agent_command: string; port: number; inbox_file: string;
 }
 
 export interface CalendarEntry {

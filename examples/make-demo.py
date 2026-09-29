@@ -92,6 +92,14 @@ def build_workspace(target: Path, today: dt.date) -> None:
         shutil.rmtree(target)
     target.mkdir(parents=True)
     (target / "cockpit.toml").write_text(CONFIG)
+    d = lambda days: (today - dt.timedelta(days=days)).isoformat()  # noqa: E731
+    (target / "INBOX.md").write_text(
+        "# Inbox\n\nSmall to-dos that do not deserve a folder. Managed by the cockpit and `bin/cockpit todo`;"
+        " safe to edit by hand.\n\n## To do\n\n"
+        f"- [ ] {d(2)} · Renew the domain name before it expires\n"
+        f"- [ ] {d(1)} · Ask the agency for the final logo files\n"
+        f"- [ ] {d(0)} · Reply to the newsletter tool about the invoice\n\n## Done\n\n"
+        f"- [x] {d(4)} → {d(1)} · Share the Q3 numbers with the team\n")
     items = [(n, c, f, b, extra, created, False) for n, (c, f, b, extra, created) in FOLDERS.items()]
     items += [(n, c, f, b, {}, created, True) for n, (c, f, b, created) in ARCHIVED.items()]
     for name, collection, fields, body, extra, created_ago, archived in items:

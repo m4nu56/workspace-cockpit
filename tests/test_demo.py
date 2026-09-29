@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 from cockpit.config import load_config
+from cockpit.inbox import list_todos
 from cockpit.sessions import list_sessions
 from cockpit.workspace import list_folders
 
@@ -18,6 +19,7 @@ def test_demo_covers_every_state(tmp_path, monkeypatch):
     assert len(folders) == 9
     alerts = {a for f in folders.values() for a in f.alerts}
     assert {"no_status", "stale_header", "overdue", "due_soon"} <= alerts
+    assert [t["done"] for t in list_todos(config)] == [False, False, False, True]
     assert folders["legacy-api-shutdown"].archived and folders["pricing-study"].collection == "research"
     sessions = list_sessions(tmp_path / "demo-claude", str(config.root))
     assert len(sessions) == 7 and sum(s["open"] for s in sessions) == 2

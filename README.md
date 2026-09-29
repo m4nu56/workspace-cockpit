@@ -17,6 +17,7 @@ Claude Code transcripts are read, never written.
 
 - **To do** — folders waiting on you (by due date), deadlines owned by someone else, and folders whose header
   is missing, invalid or stale. A prompt box starts an agent in a new terminal tab.
+- **Inbox** — on top of the To do page, small to-dos that do not deserve a folder (see [Inbox](#inbox)).
 - **All** — every tracked folder, filterable by collection, status, owner and alerts.
 - **Folder page** — edit the header in a form (only the header block is rewritten, the rest of the file is kept
   byte for byte), read the Markdown, browse and preview files (Markdown, HTML reports in a sandbox, PDF, CSV,
@@ -114,6 +115,27 @@ without a header still shows up, flagged "no status". Since the header lives in 
 it at the start of every session — a good place to ask it, in your own instructions, to keep `next_step`,
 `waiting_on` and `due` up to date when a session ends.
 
+## Inbox
+
+Small things — a call to make, a setting to check, an idea — go to `INBOX.md` at the workspace root (the
+`inbox_file` key), a plain Markdown checklist shown on top of the To do page:
+
+```markdown
+## To do
+
+- [ ] 2026-09-29 · Renew the domain name
+
+## Done
+
+- [x] 2026-09-25 → 2026-09-28 · Share the Q3 numbers
+```
+
+Type and press Enter to add one; tick it to move it to Done; delete it, or turn it into a folder when it grows
+(its text becomes the summary). The file stays yours: lines you write by hand, with or without dates, and any
+other text are kept. Actions name a to-do by its rank and the text expected there, so an action on a file edited
+in the meantime is refused rather than applied to the wrong line. Tell Claude Code about it in your
+instructions and "remind me to…" lands there too.
+
 ## Command line
 
 Every action of the web UI is also a JSON command:
@@ -128,6 +150,8 @@ bin/cockpit search "redirect"
 bin/cockpit calendar
 bin/cockpit sessions                               # Claude Code sessions under the workspace
 bin/cockpit session <session-id>
+bin/cockpit todo add "Renew the domain name"     # inbox; also: todo, todo done|undo|delete N,
+                                                   #   todo promote N <name> [--collection research]
 bin/cockpit index                                  # write INDEX.md, a Markdown map of the workspace
 bin/cockpit install | uninstall | open             # macOS: start at login, "Workspace Cockpit" app
 ```
@@ -136,7 +160,7 @@ bin/cockpit install | uninstall | open             # macOS: start at login, "Wor
 
 See [`cockpit.example.toml`](cockpit.example.toml): tracked collections, archive folder, header file, "stale"
 and "due soon" thresholds, terminal (`iterm`, `terminal`, `none`), editor app, the agent command
-(`claude` by default — e.g. `claude --model opus`), port, and whether `INDEX.md` is rewritten after every change.
+(`claude` by default — e.g. `claude --model opus`), port, the inbox file, and whether `INDEX.md` is rewritten after every change.
 
 The config file is found through `--config`, then `$COCKPIT_CONFIG`, then `./cockpit.toml`.
 Claude Code's data is read from `$CLAUDE_CONFIG_DIR`, else `~/.claude`.

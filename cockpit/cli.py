@@ -6,7 +6,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import index, launchagent, sessions, workspace
+from . import inbox, index, launchagent, sessions, workspace
 from .config import ConfigError, load_config
 
 
@@ -32,6 +32,17 @@ def _parser() -> argparse.ArgumentParser:
     sp.add_parser("index", help="write INDEX.md at the workspace root")
     sp.add_parser("sessions", help="Claude Code sessions started inside the workspace")
     sp.add_parser("session", help="detail of one Claude Code session").add_argument("session_id")
+    t = sp.add_parser("todo", help="the inbox of small to-dos (no action: list)")
+    tsp = t.add_subparsers(dest="action")
+    tsp.add_parser("add", help="add a to-do").add_argument("text")
+    for action, text in (("done", "mark done"), ("undo", "reopen"), ("delete", "remove"),
+                         ("promote", "turn into a folder (its text becomes the summary)")):
+        ta = tsp.add_parser(action, help=text)
+        ta.add_argument("n", type=int, help="rank in the inbox file (1 = first)")
+        if action == "promote":
+            ta.add_argument("name")
+            ta.add_argument("--collection", help="default: the first collection")
+        ta.add_argument("--expected", help="text expected at that rank: refused if it changed")
     sp.add_parser("install", help="macOS: start at login (LaunchAgent) + a 'Workspace Cockpit' app")
     sp.add_parser("uninstall", help="macOS: remove the LaunchAgent and the app")
     sp.add_parser("open", help="open the web UI, starting the LaunchAgent when the server is down")
@@ -46,7 +57,7 @@ def run(argv: list[str] | None = None) -> object:
                 "archive_dir": config.archive_dir, "header_file": config.header_file,
                 "stale_after_days": config.stale_after_days, "due_soon_days": config.due_soon_days,
                 "terminal": config.terminal, "editor_app": config.editor_app, "agent_command": config.agent_command,
-                "port": config.port, "write_index": config.write_index,
+                "port": config.port, "write_index": config.write_index, "inbox_file": config.inbox_file,
                 "source": str(config.source) if config.source else None}
     if a.command == "list":
         return [f.to_dict() for f in workspace.list_folders(config)]
@@ -71,6 +82,18 @@ def run(argv: list[str] | None = None) -> object:
         return workspace.apply(a.file, config)
     if a.command == "index":
         return {"written": index.write_index(config)}
+    if a.command == "todo":
+        if a.action is None:
+            return inbox.list_todos(config)
+        if a.action == "add":
+            return inbox.add(a.text, config)
+        if a.action == "done":
+            return inbox.mark_done(a.n, a.expected, config)
+        if a.action == "undo":
+            return inbox.undo(a.n, a.expected, config)
+        if a.action == "delete":
+            return inbox.delete(a.n, a.expected, config)
+        return inbox.promote(a.n, a.expected, a.name, config, a.collection).to_dict()
     if a.command == "install":
         if config.source is None:
             raise launchagent.LaunchAgentError("install needs a cockpit.toml (run it from your workspace, or pass --config)")

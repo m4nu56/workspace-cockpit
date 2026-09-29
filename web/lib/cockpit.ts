@@ -2,7 +2,7 @@ import "server-only";
 import { execFile } from "node:child_process";
 import path from "node:path";
 import { promisify } from "node:util";
-import type { CalendarEntry, Folder, FolderPage, SearchResult, Session, SessionDetail, Settings } from "./types";
+import type { CalendarEntry, Folder, FolderPage, SearchResult, Session, SessionDetail, Settings, Todo } from "./types";
 
 const run = promisify(execFile);
 const LIST_CACHE_MS = 5_000;
@@ -46,6 +46,7 @@ export async function listFolders(): Promise<Folder[]> {
 }
 
 export function invalidate(): void { listCache = null; }
+export const listTodos = () => cli<Todo[]>(["todo"]);
 export const showFolder = (p: string) => cli<FolderPage>(["show", p]);
 export const search = (text: string) => cli<{ results: SearchResult[]; truncated: boolean }>(["search", "--", text]);
 export const calendar = () => cli<CalendarEntry[]>(["calendar"]);

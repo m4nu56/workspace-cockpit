@@ -20,4 +20,5 @@ editor_app = "Visual Studio Code"   # macOS app name for the editor button, "" t
 agent_command = "claude"        # typed in the terminal tab, e.g. "claude --model opus"
 
 port = 8766
+inbox_file = "INBOX.md"         # small to-dos outside folders, at the workspace root
 write_index = false             # true: rewrite <root>/INDEX.md after every change
