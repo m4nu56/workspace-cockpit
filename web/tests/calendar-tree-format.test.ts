@@ -103,3 +103,39 @@ describe("tilde and ages", () => {
     expect(relativeAge(now / 1000 - 86_400 * 95, now)).toBe("3 months ago");
   });
 });
+
+import { attach, localDay, sessionsByDay } from "@/lib/calendar";
+import { timelineRows } from "@/lib/calendar-rows";
+
+const ss = (id: string, folder: string, start: string, end: string): Session => ({
+  id, cwd: `/w/${folder}`, folder, title: id, first_prompt: "", last_prompt: "", start, end, prompts: 1,
+  branch: "", open: false, state: null, name: "", pid: null,
+});
+
+describe("sessions in the calendar", () => {
+  const tracked = ["projects/alpha", "projects/alpha-bis", "projects/hidden"];
+  it("attaches a session to the folder containing it, never to a false prefix", () => {
+    expect(attach(ss("a", "projects/alpha/specs", "", ""), tracked)).toBe("projects/alpha");
+    expect(attach(ss("b", "projects/alpha-bis", "", ""), tracked)).toBe("projects/alpha-bis");
+    expect(attach(ss("c", "tools", "", ""), tracked)).toBe("tools");
+    expect(attach(ss("d", "", "", ""), tracked)).toBe("");
+  });
+  it("counts a session on its first and last day, once when equal", () => {
+    const m = sessionsByDay([ss("a", "", "2026-09-01T12:00:00Z", "2026-09-03T12:00:00Z"), ss("b", "", "2026-09-03T11:00:00Z", "2026-09-03T12:00:00Z")]);
+    expect(m.get(localDay("2026-09-01T12:00:00Z"))!.map((x) => x.id)).toEqual(["a"]);
+    expect(m.get(localDay("2026-09-03T12:00:00Z"))!.map((x) => x.id)).toEqual(["a", "b"]);
+    expect(localDay(null)).toBe("");
+  });
+  it("timeline rows for each display mode", () => {
+    const entries = [e("alpha", "2026-09-01", ["2026-09-01"]), e("beta", "2026-08-01", ["2026-08-01"])];
+    const sessions = [ss("s1", "projects/alpha", "2026-09-10T12:00:00Z", "2026-09-10T12:00:00Z"), ss("s2", "tools", "2026-09-20T12:00:00Z", "2026-09-20T12:00:00Z"),
+      ss("s3", "projects/hidden/x", "2026-09-05T12:00:00Z", "2026-09-05T12:00:00Z")];
+    const t = [...tracked, "projects/beta"];
+    expect(timelineRows(entries, sessions, t, "folders", "").map((r) => r.key)).toEqual(["projects/alpha", "projects/beta"]);
+    const both = timelineRows(entries, sessions, t, "both", "");
+    expect(both.map((r) => r.key)).toEqual(["tools", "projects/alpha", "projects/beta"]);
+    expect(both[1].sessions.map((x) => x.id)).toEqual(["s1"]);
+    expect(timelineRows(entries, sessions, t, "sessions", "").every((r) => r.entry === null)).toBe(true);
+    expect(timelineRows(entries, sessions, t, "both", "projects").map((r) => r.key)).toEqual(["projects/alpha", "projects/beta"]);
+  });
+});

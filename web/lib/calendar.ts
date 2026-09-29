@@ -1,4 +1,4 @@
-import type { CalendarEntry } from "./types";
+import type { CalendarEntry, Session } from "./types";
 
 // All date arithmetic in UTC on YYYY-MM-DD strings: no daylight-saving drift.
 export type Period = "3" | "6" | "12" | "all";
@@ -57,6 +57,27 @@ export function byDay(entries: CalendarEntry[]): Map<string, DaySummary> {
   for (const e of entries) {
     if (e.created) day(e.created).created.push(e);
     for (const j of e.days) if (j !== e.created) day(j).modified.push(e);
+  }
+  return days;
+}
+
+/** Local calendar day (YYYY-MM-DD) of an ISO timestamp, "" when missing. */
+export function localDay(iso: string | null): string {
+  return iso ? new Date(iso).toLocaleDateString("sv-SE") : "";
+}
+
+/** Tracked folder containing the session's folder, else the session's own folder ("" = workspace root). */
+export function attach(s: Session, tracked: string[]): string {
+  return tracked.filter((f) => s.folder === f || s.folder.startsWith(`${f}/`)).sort((a, b) => b.length - a.length)[0] ?? s.folder;
+}
+
+/** A session counts on its first day and on its last day of activity (once when they are the same). */
+export function sessionsByDay(sessions: Session[]): Map<string, Session[]> {
+  const days = new Map<string, Session[]>();
+  for (const s of sessions) {
+    for (const d of new Set([localDay(s.start), localDay(s.end)])) {
+      if (d) days.set(d, [...(days.get(d) ?? []), s]);
+    }
   }
   return days;
 }
