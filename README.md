@@ -77,6 +77,21 @@ is described by:
 collections = [ { dir = "projects", label = "project" }, { dir = "research", label = "research" } ]
 ```
 
+## Start at login (macOS)
+
+```bash
+cd ~/work && path/to/workspace-cockpit/bin/cockpit install
+```
+
+- A LaunchAgent (`~/Library/LaunchAgents/workspace-cockpit.plist`) starts the cockpit at every login, without
+  opening the browser, and restarts it only if it crashes. Logs: `~/Library/Logs/workspace-cockpit.log`.
+- A **Workspace Cockpit** app in `~/Applications` (Spotlight, Dock) opens the page — and starts the server first
+  when it is down.
+- `bin/cockpit open` does the same from a terminal; `bin/cockpit uninstall` removes both.
+
+The LaunchAgent remembers the Python, Node.js and config paths found at install time: run `install` again after
+moving the repository or changing Node.js versions.
+
 ## The header
 
 At the very top of each folder's `CLAUDE.md` (or the file set by `header_file`), one `key: value` per line:
@@ -114,6 +129,7 @@ bin/cockpit calendar
 bin/cockpit sessions                               # Claude Code sessions under the workspace
 bin/cockpit session <session-id>
 bin/cockpit index                                  # write INDEX.md, a Markdown map of the workspace
+bin/cockpit install | uninstall | open             # macOS: start at login, "Workspace Cockpit" app
 ```
 
 ## Configuration

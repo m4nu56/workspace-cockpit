@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # workspace-cockpit launcher.
 #   bin/cockpit start [--config path/to/cockpit.toml]   start the web UI on 127.0.0.1 and open it
+#   bin/cockpit install | uninstall | open               macOS: start at login + a "Workspace Cockpit" app
 #   bin/cockpit <command> ...                            any CLI command (list, show, header, index, sessions, ...)
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
@@ -39,6 +40,11 @@ CONFIG_JSON="$("$PYTHON" -m cockpit config)" || { echo "$CONFIG_JSON" >&2; exit 
 PORT="$("$PYTHON" -c 'import json,sys; print(json.load(sys.stdin)["port"])' <<<"$CONFIG_JSON")"
 URL="http://127.0.0.1:$PORT"
 if [ -n "${COCKPIT_DRY_RUN:-}" ]; then echo "config=$COCKPIT_CONFIG"; exit 0; fi
+# Already running (e.g. started by the LaunchAgent): exit 0 so launchd does not restart this one in a loop.
+if "$PYTHON" -c 'import socket,sys; socket.create_connection(("127.0.0.1", int(sys.argv[1])), timeout=1)' "$PORT" 2>/dev/null; then
+  echo "workspace-cockpit is already running on $URL"
+  exit 0
+fi
 
 command -v node >/dev/null || { echo "workspace-cockpit needs Node.js 20.9+." >&2; exit 1; }
 cd "$HERE/web"
@@ -47,6 +53,6 @@ if [ ! -f .next/BUILD_ID ] || [ -n "$(find app components lib proxy.ts package.j
   npm run build
 fi
 # macOS only: on Linux, `open` is often openvt.
-if [ "$(uname)" = "Darwin" ]; then (sleep 3 && open "$URL") & fi
+if [ "$(uname)" = "Darwin" ] && [ -z "${COCKPIT_NO_BROWSER:-}" ]; then (sleep 3 && open "$URL") & fi
 echo "workspace-cockpit on $URL (config: $COCKPIT_CONFIG)"
 exec npx next start -H 127.0.0.1 -p "$PORT"

@@ -6,7 +6,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import index, sessions, workspace
+from . import index, launchagent, sessions, workspace
 from .config import ConfigError, load_config
 
 
@@ -32,6 +32,9 @@ def _parser() -> argparse.ArgumentParser:
     sp.add_parser("index", help="write INDEX.md at the workspace root")
     sp.add_parser("sessions", help="Claude Code sessions started inside the workspace")
     sp.add_parser("session", help="detail of one Claude Code session").add_argument("session_id")
+    sp.add_parser("install", help="macOS: start at login (LaunchAgent) + a 'Workspace Cockpit' app")
+    sp.add_parser("uninstall", help="macOS: remove the LaunchAgent and the app")
+    sp.add_parser("open", help="open the web UI, starting the LaunchAgent when the server is down")
     return p
 
 
@@ -68,6 +71,14 @@ def run(argv: list[str] | None = None) -> object:
         return workspace.apply(a.file, config)
     if a.command == "index":
         return {"written": index.write_index(config)}
+    if a.command == "install":
+        if config.source is None:
+            raise launchagent.LaunchAgentError("install needs a cockpit.toml (run it from your workspace, or pass --config)")
+        return launchagent.install(Path(__file__).resolve().parent.parent, config.source.resolve())
+    if a.command == "uninstall":
+        return launchagent.uninstall()
+    if a.command == "open":
+        return launchagent.open_ui(config.port)
     if a.command == "sessions":
         return sessions.list_sessions(sessions.claude_dir(), str(config.root), sessions.CACHE)
     return sessions.session_detail(sessions.claude_dir(), str(config.root), a.session_id)
@@ -76,7 +87,7 @@ def run(argv: list[str] | None = None) -> object:
 def main(argv: list[str] | None = None) -> int:
     try:
         output = run(argv)
-    except (ConfigError, workspace.HeaderError, ValueError, LookupError) as e:
+    except (ConfigError, workspace.HeaderError, launchagent.LaunchAgentError, ValueError, LookupError) as e:
         print(json.dumps({"error": str(e)}, ensure_ascii=False))
         return 1
     print(json.dumps(output, ensure_ascii=False))
