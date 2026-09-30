@@ -21,7 +21,9 @@ Claude Code transcripts are read, never written.
 - **All** — every tracked folder, filterable by collection, status, owner and alerts.
 - **Folder page** — edit the header in a form (only the header block is rewritten, the rest of the file is kept
   byte for byte), read the Markdown, browse and preview files (Markdown, HTML reports in a sandbox, PDF, CSV,
-  images, text), archive or unarchive, open the folder in Finder, your editor, a terminal, or an agent.
+  images, text), archive or unarchive, open the folder in Finder, your editor, a terminal, or an agent. A prompt
+  box starts an agent in the folder; **Email reply** prefills it with "file this email in the notes, update the
+  header, draft a reply", so you only paste the email.
 - **Search** (⌘K) — jump to a folder, or search inside the text files of every folder, accents ignored.
 - **Calendar** — a timeline (creation → last activity, one dot per day with changes) and a month grid.
 - **Sessions** — every Claude Code session started under the workspace, as a tree of folders, with a live

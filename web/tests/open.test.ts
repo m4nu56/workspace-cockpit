@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ITERM_SCRIPT, TERMINAL_SCRIPT, openCommand, resumeCommand } from "@/lib/open";
+import { ITERM_SCRIPT, TERMINAL_SCRIPT, openCommand, promptCommand, resumeCommand } from "@/lib/open";
 import type { Settings } from "@/lib/types";
 
 const S = (x: Partial<Settings> = {}) => ({ terminal: "iterm", editor_app: "Visual Studio Code", agent_command: "claude", ...x }) as Settings;
@@ -17,16 +17,32 @@ describe("openCommand", () => {
   it("Terminal.app", () => expect(openCommand("terminal", D, S({ terminal: "terminal" }))).toEqual({ file: "osascript", args: ["-e", TERMINAL_SCRIPT, D] }));
   it("terminal none: nothing runs", () => {
     expect(openCommand("terminal", D, S({ terminal: "none" }))).toBeNull();
-    expect(openCommand("agent", D, S({ terminal: "none" }), "darwin", "hello")).toBeNull();
+    expect(openCommand("agent", D, S({ terminal: "none" }))).toBeNull();
   });
-  it("agent: configured command as is, prompt quoted separately", () => {
-    const prompt = "Review it ; rm -rf / $(x)";
-    expect(openCommand("agent", D, S({ agent_command: "claude --model opus" }), "darwin", prompt)!.args.slice(-3))
-      .toEqual([D, "claude --model opus", prompt]);
-    expect(ITERM_SCRIPT).toContain("quoted form of (item 3 of argv)");
-    expect(TERMINAL_SCRIPT).toContain("quoted form of (item 3 of argv)");
+  it("agent: configured command as is", () => expect(openCommand("agent", D, S({ agent_command: "claude --model opus" }))!.args.slice(-2))
+    .toEqual([D, "claude --model opus"]));
+});
+
+describe("promptCommand", () => {
+  it("reads the prompt from a quoted file, never from the text", () => {
+    const f = "/tmp/it's $(rm).txt";
+    const { args } = promptCommand(D, f, S({ agent_command: "claude --model opus" }))!;
+    expect(args.slice(0, 3)).toEqual(["-e", ITERM_SCRIPT, D]);
+    expect(args[3]).toBe(`claude --model opus "$(cat -- '/tmp/it'\\''s $(rm).txt'; rm -f -- '/tmp/it'\\''s $(rm).txt')"`);
   });
-  it("agent without prompt", () => expect(openCommand("agent", D, S(), "darwin", "  ")!.args.slice(-2)).toEqual([D, "claude"]));
+  it("none", () => expect(promptCommand(D, "/tmp/p.txt", S({ terminal: "none" }))).toBeNull());
+  it.each(["zsh", "bash"])("a pasted email reaches the agent intact in %s, and the file is deleted", async (shell) => {
+    const { execFileSync } = await import("node:child_process");
+    const { existsSync, mkdtempSync, writeFileSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const path = await import("node:path");
+    const f = path.join(mkdtempSync(path.join(tmpdir(), "it's ")), "prompt.txt");
+    const email = "Hi,\n\n\tOK for the numbering ; « l'envoi » $(rm -rf /) `x` \"y\"\n\nFrédéric";
+    writeFileSync(f, email);
+    const cmd = promptCommand(D, f, S({ agent_command: "printf %s" }))!.args[3];
+    expect(execFileSync(shell, ["-c", cmd], { encoding: "utf8" })).toBe(email);
+    expect(existsSync(f)).toBe(false);
+  });
 });
 
 describe("resumeCommand", () => {

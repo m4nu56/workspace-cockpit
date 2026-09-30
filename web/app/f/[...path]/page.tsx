@@ -1,5 +1,6 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { AgentPrompt } from "@/components/agent-prompt";
 import { AlertBadges, KindBadge, StatusBadge } from "@/components/badges";
 import { ArchiveButton } from "@/components/archive-button";
 import { FileBrowser } from "@/components/file-browser";
@@ -39,6 +40,7 @@ export default async function FolderView({ params, searchParams }: { params: Pro
           <div className="ml-auto"><ArchiveButton folder={folder} /></div>
         </div>
       </div>
+      {!folder.archived && <AgentPrompt path={folder.path} />}
       {!folder.archived && <HeaderForm key={JSON.stringify(folder.header)} folder={folder} />}
       <Tabs defaultValue={file ? "files" : "header"}>
         <TabsList>

@@ -1,18 +1,20 @@
 "use server";
 
 import { execFile } from "node:child_process";
-import { realpath } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
+import { realpath, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 import { revalidatePath } from "next/cache";
 import { isInside } from "@/lib/files";
 import { cli, invalidate, listFolders, sessions, settings } from "@/lib/cockpit";
-import { openCommand, resumeCommand, type Command, type Target } from "@/lib/open";
+import { openCommand, promptCommand, resumeCommand, type Command, type Target } from "@/lib/open";
 import type { Folder, Result, Todo } from "@/lib/types";
 
 const run = promisify(execFile);
 const TARGETS: readonly Target[] = ["finder", "editor", "terminal", "agent"];
-const MAX_PROMPT = 10_000;
+const MAX_PROMPT = 200_000;
 
 async function attempt<T>(work: () => Promise<T>): Promise<Result<T>> {
   try {
@@ -78,12 +80,24 @@ export async function openFile(p: string, file: string): Promise<Result<void>> {
   });
 }
 
-/** Starts the configured agent command with this prompt in a new terminal tab at the workspace root. */
-export async function startAgent(prompt: string): Promise<Result<void>> {
+/** Starts the configured agent command with this prompt in a new terminal tab, in a known folder or else at
+ * the workspace root. */
+export async function startAgent(prompt: string, p?: string): Promise<Result<void>> {
   return attempt(async () => {
     if (prompt.length > MAX_PROMPT) throw new Error("Prompt too long");
     const s = await settings();
-    await launch(openCommand("agent", await realpath(s.root), s, process.platform, prompt));
+    const folder = p ? await knownFolder(p) : await realpath(s.root);
+    const text = prompt.trim();
+    if (!text) return launch(openCommand("agent", folder, s));
+    if (s.terminal === "none") throw new Error("This action is disabled in cockpit.toml");
+    const file = path.join(tmpdir(), `cockpit-prompt-${randomUUID()}.txt`);
+    await writeFile(file, text, { mode: 0o600, flag: "wx" });
+    try {
+      await launch(promptCommand(folder, file, s));
+    } catch (e) {
+      await rm(file, { force: true });
+      throw e;
+    }
   });
 }
 
