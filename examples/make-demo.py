@@ -75,6 +75,29 @@ SESSIONS = [
 ]
 
 
+# Skills for the Skills tab: (folder relative to the demo root, name, frontmatter lines, body).
+WORKSPACE_SKILLS = [
+    (".claude/skills", "weekly-review", "description: >\n  Prepares the Friday review of every active folder: what moved, what is late, what is waiting on someone.\n"
+     "  Use it when asked for a weekly review or a status round-up.\nsummary: Friday round-up of every active folder.\n",
+     "# Weekly review\n\n1. List the folders waiting on me\n2. Flag overdue due dates\n3. Draft the summary\n"),
+    ("projects/website-redesign/.claude/skills", "seo-redirects", "description: Checks the redirects.csv of the redesign against the live site. Use it before each release.\n",
+     "# SEO redirects\n\nRead `redirects.csv`, request every old URL, report the ones that do not answer 301.\n"),
+]
+CLAUDE_SKILLS = [
+    ("skills", "meeting-notes", "description: Turns raw meeting notes into decisions and action items. Use it on any pasted meeting transcript.\n"
+     "summary: Meeting notes into decisions and action items.\n", "# Meeting notes\n\nKeep decisions, owners and dates; drop the chatter.\n"),
+    ("plugins/cache/writing-tools/skills", "plain-english", "description: Rewrites a draft in plain English, shorter sentences, no jargon. Use it when asked to simplify a text.\n",
+     "# Plain English\n\nOne idea per sentence.\n"),
+]
+
+
+def write_skills(base: Path, skills: list[tuple[str, str, str, str]]) -> None:
+    for folder, name, frontmatter, body in skills:
+        path = base / folder / name / "SKILL.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"---\nname: {name}\n{frontmatter}---\n\n{body}")
+
+
 def header(fields: dict, today: dt.date) -> str:
     out = ["---"]
     for k, v in fields.items():
@@ -120,12 +143,17 @@ def build_workspace(target: Path, today: dt.date) -> None:
             (folder / fname).write_text(content)
             touch(folder / fname, ago)
         touch(claude, max(updated, 0))
+    write_skills(target, WORKSPACE_SKILLS)
 
 
 def build_claude(target: Path, workspace: Path) -> None:
     if target.exists():
         shutil.rmtree(target)
     (target / "sessions").mkdir(parents=True)
+    write_skills(target, CLAUDE_SKILLS)
+    (target / "settings.json").write_text(json.dumps({"enabledPlugins": {"writing-tools@demo": True}}, indent=2))
+    (target / "plugins" / "installed_plugins.json").write_text(json.dumps(
+        {"version": 2, "plugins": {"writing-tools@demo": [{"installPath": str(target / "plugins" / "cache" / "writing-tools")}]}}, indent=2))
     now = dt.datetime.now(dt.timezone.utc)
     for i, (folder, title, prompts, days_ago, is_open, state) in enumerate(SESSIONS):
         cwd = str(workspace / folder) if folder else str(workspace)

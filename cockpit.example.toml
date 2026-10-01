@@ -22,3 +22,7 @@ agent_command = "claude"        # typed in the terminal tab, e.g. "claude --mode
 port = 8766
 inbox_file = "INBOX.md"         # small to-dos outside folders, at the workspace root
 write_index = false             # true: rewrite <root>/INDEX.md after every change
+
+# Skills tab: extra folders whose .claude/skills are listed (the workspace, tracked folders, ~/.claude
+# and enabled plugins are always read). Relative to root.
+# skill_dirs = ["code/my-app"]

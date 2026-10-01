@@ -2,7 +2,7 @@ import "server-only";
 import { execFile } from "node:child_process";
 import path from "node:path";
 import { promisify } from "node:util";
-import type { CalendarEntry, Folder, FolderPage, SearchResult, Session, SessionDetail, Settings, Todo } from "./types";
+import type { CalendarEntry, Folder, FolderPage, SearchResult, Session, SessionDetail, Settings, SkillDetail, SkillGroup, Todo } from "./types";
 
 const run = promisify(execFile);
 const LIST_CACHE_MS = 5_000;
@@ -52,3 +52,5 @@ export const search = (text: string) => cli<{ results: SearchResult[]; truncated
 export const calendar = () => cli<CalendarEntry[]>(["calendar"]);
 export const sessions = () => cli<Session[]>(["sessions"]);
 export const sessionDetail = (id: string) => cli<SessionDetail>(["session", id]);
+export const listSkills = () => cli<SkillGroup[]>(["skills"]);
+export const skillDetail = (id: string) => cli<SkillDetail>(["skill", "--", id]);

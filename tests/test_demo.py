@@ -6,6 +6,7 @@ from pathlib import Path
 from cockpit.config import load_config
 from cockpit.inbox import list_todos
 from cockpit.sessions import list_sessions
+from cockpit.skills import list_skills
 from cockpit.workspace import list_folders
 
 DEMO = Path(__file__).resolve().parent.parent / "examples" / "make-demo.py"
@@ -24,3 +25,6 @@ def test_demo_covers_every_state(tmp_path, monkeypatch):
     sessions = list_sessions(tmp_path / "demo-claude", str(config.root))
     assert len(sessions) == 7 and sum(s["open"] for s in sessions) == 2
     assert {s["folder"] for s in sessions} >= {"", "projects/website-redesign", "research/user-interviews"}
+    skills = {s["name"]: s for g in list_skills(config, tmp_path / "demo-claude") for s in g["skills"]}
+    assert set(skills) == {"weekly-review", "seo-redirects", "meeting-notes", "writing-tools:plain-english"}
+    assert not skills["weekly-review"]["summary_auto"] and skills["seo-redirects"]["summary_auto"]

@@ -29,12 +29,19 @@ Claude Code transcripts are read, never written.
 - **Sessions** — every Claude Code session started under the workspace, as a tree of folders, with a live
   status (working / open / closed). Click one for its prompts, edited files, GitHub links, token usage and
   last reply; resume a closed one with `claude --resume` in a new terminal tab.
+- **Skills** — every Claude Code skill within reach of the workspace (see [Skills](#skills)), grouped by where it
+  lives, each with a one-line summary; unfold one for its full description, open it to read the `SKILL.md`.
+  Invalid frontmatter and the same name in two places are flagged.
+- **Activity** — a journal of the last 14 days, day by day: Claude Code sessions and folder headers (created,
+  updated, archived), with the totals of the last 7 days.
 
 | Folder page | Calendar |
 |---|---|
 | ![Folder page](docs/screenshots/folder.png) | ![Calendar](docs/screenshots/calendar.png) |
 | **Sessions** | **Session detail** |
 | ![Sessions](docs/screenshots/sessions.png) | ![Session detail](docs/screenshots/session-detail.png) |
+| **Skills** | **Activity** |
+| ![Skills](docs/screenshots/skills.png) | ![Activity](docs/screenshots/activity.png) |
 
 ## Requirements
 
@@ -138,6 +145,29 @@ other text are kept. Actions name a to-do by its rank and the text expected ther
 in the meantime is refused rather than applied to the wrong line. Tell Claude Code about it in your
 instructions and "remind me to…" lands there too.
 
+## Skills
+
+The Skills tab lists, in this order:
+
+- `<root>/.claude/skills/` — the workspace's own skills;
+- `<folder>/.claude/skills/` of every tracked folder (archived ones skipped);
+- `<dir>/.claude/skills/` of every `skill_dirs` entry of `cockpit.toml` — e.g. a code repository that is not a
+  tracked folder;
+- your personal skills (`<claude>/skills/`) and those synced from claude.ai (`<claude>/skills/synced/`);
+- the skills of the plugins enabled in `<claude>/settings.json`.
+
+A skill's `description` is written for Claude — it says *when* to use the skill and is often long. For people, add
+a `summary:` line to the frontmatter; Claude Code ignores keys it does not know, so it changes nothing to when the
+skill triggers. Without it, the tab shows the first sentence of the description, in italics.
+
+```yaml
+---
+name: weekly-review
+description: Prepares the Friday review of every active folder... Use it when asked for a weekly review.
+summary: Friday round-up of every active folder.
+---
+```
+
 ## Command line
 
 Every action of the web UI is also a JSON command:
@@ -152,6 +182,8 @@ bin/cockpit search "redirect"
 bin/cockpit calendar
 bin/cockpit sessions                               # Claude Code sessions under the workspace
 bin/cockpit session <session-id>
+bin/cockpit skills                                 # Claude Code skills, grouped by source
+bin/cockpit skill workspace/weekly-review          # one skill with its SKILL.md
 bin/cockpit todo add "Renew the domain name"     # inbox; also: todo, todo done|undo|delete N,
                                                    #   todo promote N <name> [--collection research]
 bin/cockpit index                                  # write INDEX.md, a Markdown map of the workspace
@@ -162,7 +194,8 @@ bin/cockpit install | uninstall | open             # macOS: start at login, "Wor
 
 See [`cockpit.example.toml`](cockpit.example.toml): tracked collections, archive folder, header file, "stale"
 and "due soon" thresholds, terminal (`iterm`, `terminal`, `none`), editor app, the agent command
-(`claude` by default — e.g. `claude --model opus`), port, the inbox file, and whether `INDEX.md` is rewritten after every change.
+(`claude` by default — e.g. `claude --model opus`), port, the inbox file, extra folders for the Skills tab
+(`skill_dirs`), and whether `INDEX.md` is rewritten after every change.
 
 The config file is found through `--config`, then `$COCKPIT_CONFIG`, then `./cockpit.toml`.
 Claude Code's data is read from `$CLAUDE_CONFIG_DIR`, else `~/.claude`.
@@ -171,7 +204,7 @@ Claude Code's data is read from `$CLAUDE_CONFIG_DIR`, else `~/.claude`.
 
 - `cockpit/` — a Python package with all the rules: reading and writing headers, the inventory, alerts,
   archive, search, calendar, and reading Claude Code transcripts (`<claude>/projects/*/*.jsonl`) and open sessions
-  (`<claude>/sessions/*.json`, kept only when the process is alive). A small cache in
+  (`<claude>/sessions/*.json`, kept only when the process is alive), and listing skills (`SKILL.md` frontmatter). A small cache in
   `~/.cache/workspace-cockpit/` avoids re-reading unchanged transcripts.
 - `web/` — a Next.js app that only displays and triggers: it calls the Python CLI for every read and write.
 - `bin/cockpit` — starts the web app (install and build on demand) or forwards to the CLI.

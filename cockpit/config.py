@@ -10,7 +10,7 @@ from pathlib import Path
 TERMINALS = ("iterm", "terminal", "none")
 SIMPLE_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 KNOWN_KEYS = {"root", "collections", "archive_dir", "header_file", "stale_after_days", "due_soon_days",
-              "terminal", "editor_app", "agent_command", "port", "write_index", "inbox_file"}
+              "terminal", "editor_app", "agent_command", "port", "write_index", "inbox_file", "skill_dirs"}
 
 
 class ConfigError(Exception):
@@ -41,6 +41,8 @@ class Config:
     port: int = 8766
     write_index: bool = False
     inbox_file: str = "INBOX.md"
+    # Extra folders whose .claude/skills the Skills tab lists (e.g. a code repository that is not a tracked folder).
+    skill_dirs: tuple[Path, ...] = ()
     source: Path | None = field(default=None, compare=False)
 
     def collection(self, dir_name: str) -> Collection | None:
@@ -126,10 +128,14 @@ def load_config(path: Path | None = None) -> Config:
     write_index = data.get("write_index", False)
     if not isinstance(write_index, bool):
         raise ConfigError("write_index must be true or false")
+    raw_skill_dirs = data.get("skill_dirs", [])
+    if not isinstance(raw_skill_dirs, list) or not all(isinstance(d, str) and d.strip() for d in raw_skill_dirs):
+        raise ConfigError("skill_dirs must be a list of folder paths")
+    skill_dirs = tuple((root / Path(d).expanduser()).resolve() for d in raw_skill_dirs)
     return Config(
         root=root, collections=tuple(collections), archive_dir=archive_dir, header_file=header_file,
         stale_after_days=_positive_int(data, "stale_after_days", 14), due_soon_days=_positive_int(data, "due_soon_days", 7),
         terminal=terminal, editor_app=_string(data, "editor_app", "Visual Studio Code", allow_empty=True),
         agent_command=_string(data, "agent_command", "claude"), port=_positive_int(data, "port", 8766),
-        write_index=write_index, inbox_file=inbox_file, source=found,
+        write_index=write_index, inbox_file=inbox_file, skill_dirs=skill_dirs, source=found,
     )

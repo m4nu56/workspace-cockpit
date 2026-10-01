@@ -16,6 +16,8 @@ const TABS = [
   { href: "/all", label: "All" },
   { href: "/calendar", label: "Calendar" },
   { href: "/sessions", label: "Sessions" },
+  { href: "/skills", label: "Skills" },
+  { href: "/activity", label: "Activity" },
   { href: "/new", label: "New" },
 ];
 

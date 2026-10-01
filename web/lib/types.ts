@@ -16,7 +16,7 @@ export type Result<T> = { ok: true; value: T } | { ok: false; error: string };
 export interface Settings {
   root: string; home: string; collections: { dir: string; label: string }[]; archive_dir: string; header_file: string;
   stale_after_days: number; due_soon_days: number; terminal: "iterm" | "terminal" | "none";
-  editor_app: string; agent_command: string; port: number; inbox_file: string;
+  editor_app: string; agent_command: string; port: number; inbox_file: string; skill_dirs: string[];
 }
 
 export interface CalendarEntry {
@@ -39,3 +39,12 @@ export interface SessionDetail {
   links: string[];
   last_reply: string;
 }
+
+export interface Skill {
+  id: string; name: string; origin: string; summary: string; summary_auto: boolean; description: string;
+  path: string; files: string[]; error: string | null; duplicate: boolean;
+}
+
+export interface SkillGroup { origin: string; label: string; skills: Skill[] }
+
+export interface SkillDetail extends Skill { group: string; body: string }

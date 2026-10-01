@@ -6,7 +6,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import inbox, index, launchagent, sessions, workspace
+from . import inbox, index, launchagent, sessions, skills, workspace
 from .config import ConfigError, load_config
 
 
@@ -32,6 +32,8 @@ def _parser() -> argparse.ArgumentParser:
     sp.add_parser("index", help="write INDEX.md at the workspace root")
     sp.add_parser("sessions", help="Claude Code sessions started inside the workspace")
     sp.add_parser("session", help="detail of one Claude Code session").add_argument("session_id")
+    sp.add_parser("skills", help="Claude Code skills: workspace, folders, skill_dirs, personal, enabled plugins")
+    sp.add_parser("skill", help="one skill with its SKILL.md body").add_argument("skill_id")
     t = sp.add_parser("todo", help="the inbox of small to-dos (no action: list)")
     tsp = t.add_subparsers(dest="action")
     tsp.add_parser("add", help="add a to-do").add_argument("text")
@@ -58,6 +60,7 @@ def run(argv: list[str] | None = None) -> object:
                 "stale_after_days": config.stale_after_days, "due_soon_days": config.due_soon_days,
                 "terminal": config.terminal, "editor_app": config.editor_app, "agent_command": config.agent_command,
                 "port": config.port, "write_index": config.write_index, "inbox_file": config.inbox_file,
+                "skill_dirs": [str(d) for d in config.skill_dirs],
                 "source": str(config.source) if config.source else None}
     if a.command == "list":
         return [f.to_dict() for f in workspace.list_folders(config)]
@@ -102,6 +105,10 @@ def run(argv: list[str] | None = None) -> object:
         return launchagent.uninstall()
     if a.command == "open":
         return launchagent.open_ui(config.port)
+    if a.command == "skills":
+        return skills.list_skills(config, sessions.claude_dir())
+    if a.command == "skill":
+        return skills.skill_detail(a.skill_id, config, sessions.claude_dir())
     if a.command == "sessions":
         return sessions.list_sessions(sessions.claude_dir(), str(config.root), sessions.CACHE)
     return sessions.session_detail(sessions.claude_dir(), str(config.root), a.session_id)
